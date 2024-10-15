@@ -1,0 +1,34 @@
+```{r}
+# ------------------------------- Loading data ------------------------------- #
+# Setting the WORKING DIRECTORY
+# This is done using the function setwd and the path of the folder
+# in which data are and results will be saved
+
+getwd()
+setwd("/Users/mabelwylie/Documents/Network Modelling/NMProj1")
+
+list.files() # Listing the files in the working directory
+
+# Installing and loading the necessary R packages 
+# (installation to be done only the first time you use a library):
+install.packages("sna")
+install.packages("network")
+library(sna)
+library(network)
+
+
+# Loading data: 
+file <- "Krackhardt-High-Tech_Multiplex_Social/Dataset/Krackhardt-High-Tech_layers.txt"
+advice <- read.csv(file,header=TRUE, sep = " ")
+friendship <- as.matrix(read.table("Lazega/ELfriend36.dat",header=FALSE))
+rownames(advice) <- 1:nrow(advice)
+colnames(advice) <- 1:nrow(advice)
+rownames(friendship) <- 1:nrow(advice)
+colnames(friendship) <- 1:nrow(advice)
+
+# - demographic characteristics of the lawyers
+attr <- read.table("Lazega/ELattr36.dat",header=TRUE)
+str(attr)
+
+```
+
