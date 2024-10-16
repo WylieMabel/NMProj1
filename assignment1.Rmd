@@ -5,30 +5,50 @@
 # in which data are and results will be saved
 
 getwd()
-setwd("/Users/mabelwylie/Documents/Network Modelling/NMProj1")
 
 list.files() # Listing the files in the working directory
 
 # Installing and loading the necessary R packages 
 # (installation to be done only the first time you use a library):
-install.packages("sna")
-install.packages("network")
+# install.packages("sna")
+# install.packages("network")
 library(sna)
 library(network)
 
 
 # Loading data: 
-file <- "Krackhardt-High-Tech_Multiplex_Social/Dataset/Krackhardt-High-Tech_layers.txt"
-advice <- read.csv(file,header=TRUE, sep = " ")
-friendship <- as.matrix(read.table("Lazega/ELfriend36.dat",header=FALSE))
-rownames(advice) <- 1:nrow(advice)
-colnames(advice) <- 1:nrow(advice)
-rownames(friendship) <- 1:nrow(advice)
-colnames(friendship) <- 1:nrow(advice)
+layersPath <- "Krackhardt-High-Tech_Multiplex_Social/Dataset/Krackhardt-High-Tech_layers.txt"
+nodesPath <- "Krackhardt-High-Tech_Multiplex_Social/Dataset/Krackhardt-High-Tech_nodes.txt"
+edgesPath <- "Krackhardt-High-Tech_Multiplex_Social/Dataset/Krackhardt-High-Tech_multiplex.edges"
+layers <- read.csv(layersPath,header=TRUE, sep = " ")
+nodes <- read.csv(nodesPath,header=TRUE, sep = " ")
+edges <- read.table(edgesPath,header=FALSE, sep = " ")
+edgesCols <- c ("layerID", "sendingNodeID", "recievingNodeID", "weight")
+colnames(edges) <- edgesCols
 
-# - demographic characteristics of the lawyers
-attr <- read.table("Lazega/ELattr36.dat",header=TRUE)
-str(attr)
+# Setting Adjacency Matrices for each layer
+adviceTies <- edges[edges$layerID==1, ]
+friendshipTies <- edges[edges$layerID==2, ]
+reportsToTies <- edges[edges$layerID==3, ]
 
+adviceMatrix <- matrix(0L, nrow=21, ncol=21)
+friendshipTiesMatrix <- matrix(0L, nrow=21, ncol=21)
+reportsToTiesMatrix <- matrix(0L, nrow=21, ncol=21)
+
+
+for(i in 1:dim(edges)) {
+  layer <- edges[i, 1]
+  sendingNode <- edges[i, 2]
+  recievingNode <- edges[i, 3]
+  weightTie <- edges[i, 4]
+  if (layer == "1") {
+    adviceMatrix[sendingNode, recievingNode] <- weightTie
+  } else if (layer == "2") {
+    friendshipTiesMatrix[sendingNode, recievingNode] <- weightTie
+  } else {
+    reportsToTiesMatrix[sendingNode, recievingNode] <- weightTie
+  }
+}
 ```
+
 
