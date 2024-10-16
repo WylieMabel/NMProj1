@@ -152,7 +152,7 @@ MarkovChain <- function(
   {
     net = MHstep(net,theta1,theta2,theta3);
     netSim[,,i] = net;
-    statSim[i] = computeStats(net);
+    statSim[i,] = computeStats(net_t);
   }
   
   # Return the simulated networks and the statistics
