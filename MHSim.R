@@ -92,8 +92,15 @@ MHstep <- function(net, theta1, theta2, theta3){
   # Return the next state of the chain
   
   r = runif(1);
-  if (r < p) return(new_net)
-  else return(net)
+  if(r <= p)
+  {
+     next_net = new_net;
+  }
+  else
+  {
+    next_net = net;
+  }
+  return(next_net)
 }
 
 # Markov Chain simulation -------------------------------------------------
