@@ -11,7 +11,7 @@ task_2_2 = function(advice)
   obs_stats = computeStats(advice)
   n = dim(advice)[1]
   
-  result = MarkovChain(matrix(0,n,n),-2.76,0.68,0.05, nNet = iterations)
+  result = MarkovChain(matrix(0,n,n),c(-2.76,0.68,0.05), statFunc = computeStats, nNet = iterations)
   
   out = evalStat(result$statSim,obs_stats)
   print(out)
