@@ -49,9 +49,11 @@ computeStats = function(net)
 #' @param net an object of class `matrix`. Adjacency matrix of the network.
 #' @param theta statistics vector, for task 2 this are the following values:
 #' edge count, reciprocal tie count, and 2-istar count.
+#' @param statFunc function used to compute the statistics, should only take a
+#' netowrk as argument.
 #'
 #' @return next state of the Markov Chain
-MHstep <- function(net, theta){
+MHstep <- function(net, theta, statFunc){
   
   # Number of vertices in the network
   nvertices <- nrow(net) 
@@ -66,8 +68,8 @@ MHstep <- function(net, theta){
   
   # Compute the change statistics
   
-  current_stat = computeStats(net);
-  new_stat = computeStats(new_net);
+  current_stat = statFunc(net);
+  new_stat = statFunc(new_net);
   delta_stat = new_stat - current_stat;
   
   
@@ -98,6 +100,8 @@ MHstep <- function(net, theta){
 #' @param net an object of class `matrix`. Adjacency matrix of the network.
 #' @param theta statistics vector, for task 2 this are the following values:
 #' edge count, reciprocal tie count, and 2-istar count.
+#' @param statFunc function used to compute the statistics, should only take a
+#' netowrk as argument.
 #' @param burnin an integer value.
 #'   Number of steps to reach the stationary distribution.
 #' @param thinning an integer value. Number of steps between simulated networks.
@@ -109,6 +113,7 @@ MHstep <- function(net, theta){
 MarkovChain <- function(
     net,
     theta,
+    statFunc,
     burnin = 10000, thinning = 1000, nNet = 1000){
   
   # Burnin phase: repeating the steps of the chain "burnin" times  
@@ -119,22 +124,22 @@ MarkovChain <- function(
   # Perform the burnin steps
   for (i in 1:burnin)
   {
-    net_t = MHstep(net_t,theta);
+    net_t = MHstep(net_t,theta,statFunc);
   }
   
   # After the burnin phase we draw the networks
   # The simulated networks and statistics are stored in the objects
   # netSim and statSim
   netSim <- array(0, dim = c(nvertices, nvertices, nNet))
-  statSim <- matrix(0, nNet, 3)
+  statSim <- matrix(0, nNet, length(theta))
   thinningSteps <- 0 # counter for the number of thinning steps
   netCounter <- 1 # counter for the number of simulated network
   
   for(i in 1:nNet)
   {
-    net_t = MHstep(net_t,theta);
+    net_t = MHstep(net_t,theta,statFunc);
     netSim[,,i] = net_t;
-    statSim[i,] = computeStats(net_t);
+    statSim[i,] = statFunc(net_t);
   }
   
   # Return the simulated networks and the statistics
