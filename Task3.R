@@ -41,7 +41,6 @@ covariance = function(statSim, mean)
       m[i,j] = cov;
     }
   }
-  print(m)
   return(m)
 }
 
