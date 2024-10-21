@@ -87,7 +87,7 @@ MCMC = function(obs_net, iter, chain_iter = 1000, burnin = 10000, thinning = 100
       # Robbins-Monro algorithm
       theta = theta - alpha * (D %*% (eval$mean - observed));
       alpha = alpha_0 / (i + 1);
-      D = solve(covariance(result$statSim, eval$mean));
+      D = covariance(result$statSim, eval$mean);
     }
   }
   eval$theta = theta;
