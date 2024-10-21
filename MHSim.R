@@ -49,12 +49,10 @@ computeStats = function(net)
 #' @param net an object of class `matrix`. Adjacency matrix of the network.
 #' @param theta statistics vector, for task 2 this are the following values:
 #' edge count, reciprocal tie count, and 2-istar count.
-#' @param statFunc function used to compute the statistics, should only take a
-#' netowrk as argument.
 #'
 #' @return next state of the Markov Chain
-MHstep <- function(net, theta, statFunc){
-  
+MHstep <- function(net, theta)
+{
   # Number of vertices in the network
   nvertices <- nrow(net) 
   
@@ -68,8 +66,8 @@ MHstep <- function(net, theta, statFunc){
   
   # Compute the change statistics
   
-  current_stat = statFunc(net);
-  new_stat = statFunc(new_net);
+  current_stat = computeStats(net);
+  new_stat = computeStats(new_net);
   delta_stat = new_stat - current_stat;
   
   
@@ -84,7 +82,7 @@ MHstep <- function(net, theta, statFunc){
   r = runif(1);
   if(r <= p)
   {
-     next_net = new_net;
+    next_net = new_net;
   }
   else
   {
@@ -100,8 +98,6 @@ MHstep <- function(net, theta, statFunc){
 #' @param net an object of class `matrix`. Adjacency matrix of the network.
 #' @param theta statistics vector, for task 2 this are the following values:
 #' edge count, reciprocal tie count, and 2-istar count.
-#' @param statFunc function used to compute the statistics, should only take a
-#' netowrk as argument.
 #' @param burnin an integer value.
 #'   Number of steps to reach the stationary distribution.
 #' @param thinning an integer value. Number of steps between simulated networks.
@@ -113,7 +109,6 @@ MHstep <- function(net, theta, statFunc){
 MarkovChain <- function(
     net,
     theta,
-    statFunc,
     burnin = 10000, thinning = 1000, nNet = 1000){
   
   # Burnin phase: repeating the steps of the chain "burnin" times  
@@ -124,7 +119,7 @@ MarkovChain <- function(
   # Perform the burnin steps
   for (i in 1:burnin)
   {
-    net_t = MHstep(net_t,theta,statFunc);
+    net_t = MHstep(net_t,theta);
   }
   
   # After the burnin phase we draw the networks
@@ -137,7 +132,7 @@ MarkovChain <- function(
   
   for(i in 1:nNet)
   {
-    net_t = MHstep(net_t,theta,statFunc);
+    net_t = MHstep(net_t,theta);
     netSim[,,i] = net_t;
     statSim[i,] = statFunc(net_t);
   }
