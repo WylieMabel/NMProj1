@@ -1,142 +1,65 @@
-# Network Modeling - HS 2024
-# C. Stadtfeld, A. Uzaheta and I. Smokovic
-# Social Networks Lab
-# Department of Humanities, Social and Political Sciences
-# ETH Zurich
-# 14 October 2024
-#
-# Assignment 1 - Task 2
-
-# computeStats ------------------------------------------------------------------
-#' Calculates the three statistics: edge count, reciprocal edges, star2
-#' and outputs them as a vector.
+# task_2_2 ------------------------------------------------------------------
+#' Executes task 2.2
 #'
-#' @param net adiacency matrix (network) to compute
+#' @param advice advice adiancency matrix
 #'
-#' @return a vector containing the statistics (edge count, reciprocal edges, star2)
-computeStats = function(net)
+#' @return nothing, it just prints out the evaluated statistics (see evalStat)
+task_2_2 = function(advice)
 {
-  # Number of vertices in the network
-  nvertices <- nrow(net) 
+  iterations = 1000
   
-  # Edge count
-  # Not yet correct must remove reciprocal edges as they got double counted
-  stat1 = sum(net);
+  obs_stats = computeStats(advice)
+  n = dim(advice)[1]
   
-  # Sum of matrix representing reciprocal ties. Warning, Hadamard product not matrix prod.
-  stat2 = sum(net * t(net)) / 2;
-  # Now stat1 is correct
-  stat1 = stat1 - stat2;
+  result = MarkovChain(matrix(0,n,n),c(-2.76,0.68,0.05), nNet = iterations)
   
-  # Vector where each row is the indegree of the correspoding node
-  # trnaspose is necessary to ensure each row is a receiver instead of a sender
-  indegree = as.vector(t(net) %*% rep(1,dim(net)[1]));
-  # New vector that filters only indegrees of 2
-  star_2 = ifelse(indegree[1:nvertices] == 2, 1, 0);
-  stat3 = sum(star_2);
-  
-  return(c(stat1,stat2,stat3))
+  out = evalStat(result$statSim,obs_stats)
+  print(out)
 }
 
-
-# MHstep ------------------------------------------------------------------
-#' Simulate the next step of a network in Markov chain using Metropolis-Hasting
-#' 
-#' The function `MHstep` simulates the the Metropolis-Hastings step that defines
-#' the Markov chain whose stationary distribution is the ERGM with 
-#' edge, mutual and nodematch statistics
+# evalStat ------------------------------------------------------------------
+#' Calculates the mean, standard deviation, p_values, and t_ratios from a
+#' given matrix of statistics vectors, each row should be a statistic from a
+#' simulated network.
 #'
-#' @param net an object of class `matrix`. Adjacency matrix of the network.
-#' @param theta statistics vector, for task 2 this are the following values:
-#' edge count, reciprocal tie count, and 2-istar count.
+#' @param stats the statistics matrix collected from the simulation
+#' @param observed the statistics observed in the real network (should be a vector)
 #'
-#' @return next state of the Markov Chain
-MHstep <- function(net, theta)
+#' @return a data frame containing the following columns in this order: observed,
+#' mean, std_dev, p_value, t_ratio
+evalStat = function(stats, observed)
 {
-  # Number of vertices in the network
-  nvertices <- nrow(net) 
+  iter = dim(stats)[1];
+  s = dim(stats)[2];
+  mean = vector(length = s)
+  dev = vector(length = s)
+  p = vector(length = s)
+  t = vector(length = s)
   
-  # Choose randomly two vertices, prevent loops {i,i} with replace = FALSE
-  tie <- sample(1:nvertices, 2, replace = FALSE) 
-  i <- tie[1]
-  j <- tie[2]
-  
-  new_net = net;
-  new_net[i,j] = ifelse(new_net[i,j]== 0, 1, 0);
-  
-  # Compute the change statistics
-  
-  current_stat = computeStats(net);
-  new_stat = computeStats(new_net);
-  delta_stat = new_stat - current_stat;
-  
-  
-  # Compute the probability of the next state 
-  # according to the Metropolis-Hastings algorithm
-  
-  p = min(1,exp(sum(theta * delta_stat)));
-  
-  # Select the next state: 
-  # Return the next state of the chain
-  
-  r = runif(1);
-  if(r <= p)
+  #Calculate mean and p value
+  for(i in 1:iter)
   {
-    next_net = new_net;
+    st = stats[i,];
+    for(j in 1:s)
+    {
+      stat = st[j];
+      mean[j] = mean[j] + stat;
+      if(observed[j] <= stat) p[j] = p[j] + 1;
+    }
   }
-  else
+  mean = mean / iter;
+  p = p / iter;
+  
+  #Calculate standard deviation
+  for(i in 1:iter)
   {
-    next_net = net;
+    st = stats[i,];
+    for(j in 1:s) dev[j] = dev[j] + abs(mean[j] - st[j])^2;
   }
-  return(next_net)
-}
-
-# Markov Chain simulation -------------------------------------------------
-#' The function MarkovChain simulates the networks from the ERGM with 
-#' edge, mutual and nodematch statistics
-#'
-#' @param net an object of class `matrix`. Adjacency matrix of the network.
-#' @param theta statistics vector, for task 2 this are the following values:
-#' edge count, reciprocal tie count, and 2-istar count.
-#' @param burnin an integer value.
-#'   Number of steps to reach the stationary distribution.
-#' @param thinning an integer value. Number of steps between simulated networks.
-#' @param nNet an integer value. Number of simulated networks to return as output.
-#'
-#' @return a named list:
-#'   - netSim: an `array` with the adjancency matrices of the simulated networks.
-#'   - statSim: a `matrix` with the value of the statistic defining the ERGM.
-MarkovChain <- function(
-    net,
-    theta,
-    burnin = 10000, thinning = 1000, nNet = 1000){
+  dev = sqrt(dev / iter);
   
-  # Burnin phase: repeating the steps of the chain "burnin" times  
-  nvertices <- nrow(net)
-  burninStep <- 1 # counter for the number of burnin steps
+  #Calculate t-ratios
+  for(i in 1:s) t[i] = abs(observed[i] - mean[i]) / dev[i];
   
-  net_t = net;
-  # Perform the burnin steps
-  for (i in 1:burnin)
-  {
-    net_t = MHstep(net_t,theta);
-  }
-  
-  # After the burnin phase we draw the networks
-  # The simulated networks and statistics are stored in the objects
-  # netSim and statSim
-  netSim <- array(0, dim = c(nvertices, nvertices, nNet))
-  statSim <- matrix(0, nNet, length(theta))
-  thinningSteps <- 0 # counter for the number of thinning steps
-  netCounter <- 1 # counter for the number of simulated network
-  
-  for(i in 1:nNet)
-  {
-    net_t = MHstep(net_t,theta);
-    netSim[,,i] = net_t;
-    statSim[i,] = statFunc(net_t);
-  }
-  
-  # Return the simulated networks and the statistics
-  return(list(netSim = netSim, statSim = statSim))
+  return(data.frame(observed = observed, mean = mean, std_dev = dev, p_value = p, t_ratio = t))
 }
