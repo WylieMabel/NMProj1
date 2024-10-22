@@ -1,20 +1,14 @@
+# Network Modelling Project 1
+
+**Matej Mrazek, Gabriele Spisani, Nicola Taddei, Mabel Wylie**
+
+### Loading Data and Importing Packages
+
 ```{r}
-# ------------------------------- Loading data ------------------------------- #
-# Setting the WORKING DIRECTORY
-# This is done using the function setwd and the path of the folder
-# in which data are and results will be saved
-
-getwd()
-
-list.files() # Listing the files in the working directory
-
-# Installing and loading the necessary R packages 
-# (installation to be done only the first time you use a library):
-# install.packages("sna")
-# install.packages("network")
+#install.packages("sna")
+#install.packages("network")
 library(sna)
 library(network)
-
 
 # Loading data: 
 layersPath <- "Krackhardt-High-Tech_Multiplex_Social/Dataset/Krackhardt-High-Tech_layers.txt"
@@ -34,6 +28,12 @@ reportsToTies <- edges[edges$layerID==3, ]
 adviceMatrix <- matrix(0L, nrow=21, ncol=21)
 friendshipTiesMatrix <- matrix(0L, nrow=21, ncol=21)
 reportsToTiesMatrix <- matrix(0L, nrow=21, ncol=21)
+rownames(adviceMatrix) <- 1:21
+colnames(adviceMatrix) <- 1:21
+rownames(friendshipTiesMatrix) <- 1:21
+colnames(friendshipTiesMatrix) <- 1:21
+rownames(reportsToTiesMatrix) <- 1:21
+colnames(reportsToTiesMatrix) <- 1:21
 
 
 for(i in 1:dim(edges)) {
@@ -51,4 +51,106 @@ for(i in 1:dim(edges)) {
 }
 ```
 
+### Task 1: MR-QAP Logit Regression
 
+#### 1)
+
+*Import the data. Build a QAP to test if friendship and advice relations correlate. Use at least 5,000 permutations for reporting the results.*
+
+```{r}
+set.seed(18)  
+permutations <- 5000
+nl0 <- netlogit(friendshipTiesMatrix, adviceMatrix, rep=permutations, nullhyp="qapy") 
+nl0$names <- c("intercept", "advice")
+
+summary(nl0)
+```
+
+Setting a significance value of 0.05, we can see that both the intercept and the advice features are statistically significant. Focusing on advice, since the p-value is less than our set significance level, we can reject the null hypothesis that friendship and advice relations are uncorrelated.
+
+#### 2)
+
+*Add to the model in **1)** variables to test the following hypotheses simultaneously*
+
+1.  *A friendship nomination is more likely between a pair of managers within the same deparment.*
+
+2.  *Senior managers are less likely to nominate friends.*
+
+3.  *A friendship nomination is more likely between a pair of managers of a similar age.*
+
+*Argue for the definition of the variables. When several operationalizations are possible choose one of them.*
+
+```{r}
+# Hp 1: Friendship nomination between a pair of managers in same department
+departments <- nodes[,5]
+sameDepartment <- abs(outer(departments,departments,"=="))
+
+# Hp 2: Senior managers are less likely to nominate friends
+seniority <- nodes[,3]
+senioritySender <- matrix(seniority,21,21,byrow=FALSE)
+
+# Hp 3: Friendship nomination between a pair of managers of a similar age	
+age <- nodes[,2]
+ageDiff <- abs(outer(age,age,"-"))
+```
+
+The hypotheses were incorporated into the model as follows;
+
+1.  A Boolean indicates whether the sender and receiver of the friendship nomination share the same department. We will expect to see a positive statistically significant coefficient when this Boolean is True to indicate increased friendship likelihood.
+
+2.  The Seniority/Tenure of the friendship nomination sender is tested for significance. We will expect to see a negative statistically significant coefficient associated with increasing Seniority to indicate the decreased likelihood of senior managers nominating friends.
+
+3.  The difference in age of senders and receivers of the friendship nomination is tested for significance. We will expect to see a negative statistically significant coefficient associated with increasing age difference to indicate the increased likelihood of managers of similar ages sending and receiving friendship nominations between them.
+
+#### 3)
+
+*Estimate the model specified in **2)**. Interpret the coeﬀicients of the model and determine
+whether the data support the hypotheses listed in **2)**.*
+
+```{r}
+set.seed(18) #To reproduce the results 
+permutations <- 5000 # Number of permutations
+zm <- list(adviceMatrix, sameDepartment, senioritySender, ageDiff)
+nl <- netlogit(friendshipTiesMatrix, zm, rep=permutations, nullhyp="qapspp")
+nl$names <- c("intercept","adviceMatrix","sameDep", "senioritySender", "ageDiff")
+summary(nl)
+```
+
+Interpreting the results in the model with a significance level of 0.05 reveals the following;
+
+-   Under the new model configuration, friendship and advice relations correlate as before.
+-   Hypothesis 1 related to sharing department increasing likelihood of a friendship nomination is supported by the related model coefficient. The p-value of the observed value is much less than the significance level, and is positive as expected, indicating that sharing department increases the likelihood of a friendship nomination.
+-   Hypothesis 2 regarding seniority of the friendship nomination sender is not supported by the related model coefficient. The model coefficient is positive near-zero, unlike the hypothesized negative coefficient, and the p-value of the observed value is greater than the significance level, so the null hypothesis cannot be rejected, thus we cannot say that hypothesis 2 is supported by the model.
+-   Hypothesis 3 regarding the age difference of sender and receivers is not supported by the related model coefficient. The model coefficient is negative near-zero, like the hypothesized negative coefficient, however the p-value of the observed value is greater than the significance level, so the null hypothesis cannot be rejected, thus we cannot say that hypothesis 3 is supported by the model.
+
+#### 4)
+
+*Could you think of another hypothesis that could be tested using QAPs? State your
+hypothesis and provide the corresponding statistic.*
+
+A possible hypothesis could be that managers on the same level are more likely to be friends, e.g managers are friends with managers, vice presidents are friends with vice presidents and so on.
+
+The test statistic for this hypothesis could be as follows,
+
+```{r}
+levels <- nodes[,4]
+sameLevel <- abs(outer(levels,levels,"=="))
+```
+
+#### 5)
+
+*Test the hypothesis formulated in (4) by adding the corresponding variable in the MR-
+QAP specified in (3). Comment on the results.*
+
+```{r}
+# The explanatory variables must be combined in a list
+zm1 <- list(adviceMatrix, sameDepartment, senioritySender, ageDiff, sameLevel)
+
+set.seed(18)
+permutations <- 5000
+nl <- netlogit(friendshipTiesMatrix, zm1, rep=permutations, nullhyp="qapspp")
+nl$names <- c("intercept","adviceMatrix", "sameDep", "senioritySender", "ageDiff", "sameLevel")
+summary(nl)
+```
+
+The model coefficients that are shared across **3)** and **5)** agree with in significance and magnitude of the coefficients. The proposed additional hypothesis of managers at the same level being more likely to ask another for help is supported by the model coefficients. The significance of this coefficient is much less than the significance level, and the coefficient is positive, meaning that managers of the same level are more likely to have a friendship nomination between them.

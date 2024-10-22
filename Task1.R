@@ -161,4 +161,40 @@ nl <- netlogit(friendshipTiesMatrix, zm1, rep=permutations, nullhyp="qapspp")
 nl$names <- c("intercept","sameDep", "senioritySender", "ageDiff", "sameLevel")
 summary(nl)
 
+
+# Step 3: Model check and interpretation
+# Understanding the empirical p-values
+z.values <- rbind(nl$dist,nl$tstat)
+p.values <- function(x,permutations){
+  sum(abs(x[1:permutations]) > abs(x[permutations+1]))/permutations}
+empirical.p.values <- apply(z.values,2,p.values,permutations)
+empirical.p.values
+
+# Visualizing the empirical p-values
+par(mfrow=c(2,3))
+for (i in 1:5)
+{
+  hist(nl$dist[,i],
+       breaks = 30,
+       xlim = c(min(c(nl$tstat[i],nl$dist[,i]))-1,
+                max(c(nl$tstat[i],nl$dist[,i]))+1),
+       main = nl$names[i],xlab="z-values")
+  abline(v = nl$tstat[i],col="red",lwd=3,lty=2)
+}
+
+# Interpreting the parameters (see the commented output in the lecture notes)
+
+# Step 4: Format and export the results
+res <- summary(nl)
+expRes <- cbind(res$coefficients, exp(res$coefficients), res$se, res$pgreqabs)
+colnames(expRes) <- c("ESt.", "exp(Est.)", "s.e.", "p-value")
+rownames(expRes) <- res$names
+expRes
+write.csv(expRes,"res1_5QAP.csv")
+
+# Exporting results in tex
+library(xtable)
+xtable(expRes,digits=3)
+
 # Still to display the results and comment on them #
+
