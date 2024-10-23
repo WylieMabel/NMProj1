@@ -20,20 +20,15 @@ computeStats = function(net)
   nvertices <- nrow(net) 
   
   # Edge count
-  # Not yet correct must remove reciprocal edges as they got double counted
   stat1 = sum(net);
   
   # Sum of matrix representing reciprocal ties. Warning, Hadamard product not matrix prod.
-  stat2 = sum(net * t(net)) / 2;
-  # Now stat1 is correct
-  stat1 = stat1 - stat2;
+  stat2 = sum(net * t(net));
   
-  # Vector where each row is the indegree of the correspoding node
-  # trnaspose is necessary to ensure each row is a receiver instead of a sender
-  indegree = as.vector(t(net) %*% rep(1,dim(net)[1]));
-  # New vector that filters only indegrees of 2
-  star_2 = ifelse(indegree[1:nvertices] == 2, 1, 0);
-  stat3 = sum(star_2);
+  indegree = colSums(net);
+  star2 = vector(length = length(indegree))
+  for(i in 1:length(star2)) star2[i] = indegree[i]*(indegree[i]-1)*0.5
+  stat3 = sum(star2);
   
   return(c(stat1,stat2,stat3))
 }
@@ -117,10 +112,7 @@ MarkovChain <- function(
   
   net_t = net;
   # Perform the burnin steps
-  for (i in 1:burnin)
-  {
-    net_t = MHstep(net_t,theta);
-  }
+  for (i in 1:burnin) net_t = MHstep(net_t,theta);
   
   # After the burnin phase we draw the networks
   # The simulated networks and statistics are stored in the objects
@@ -130,11 +122,13 @@ MarkovChain <- function(
   thinningSteps <- 0 # counter for the number of thinning steps
   netCounter <- 1 # counter for the number of simulated network
   
+  
   for(i in 1:nNet)
   {
-    net_t = MHstep(net_t,theta);
+    for(j in 1:thinning) net_t = MHstep(net_t,theta);
+    print(paste("Net number",i,"simulated"))
     netSim[,,i] = net_t;
-    statSim[i,] = statFunc(net_t);
+    statSim[i,] = computeStats(net_t);
   }
   
   # Return the simulated networks and the statistics
