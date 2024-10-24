@@ -1,0 +1,16 @@
+TASK 3.1
+
+Maximum Likelihood Results:
+
+                     Estimate Std. Error MCMC % z value Pr(>|z|)    
+edges                 -1.4095     0.1394      0 -10.108   <1e-04 ***
+nodematch.department   1.0217     0.2522      0   4.051   <1e-04 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+     Null Deviance: 582.2  on 420  degrees of freedom
+ Residual Deviance: 449.8  on 418  degrees of freedom
+
+[1] "Tie existing given it is not going homophile. Odds: 0.244274809160459 Probability: 0.560766838339613"
+[1] "Tie being homophile given it already exists. Odds: 2.77790178571253 Probability: 0.941469930870198"
+[1] "Tie existing given it is homophile Odds: 0.678571428571428 Probability: 0.663419780518579"

@@ -1,0 +1,16 @@
+Task 3.2
+Monte Carlo Maximum Likelihood Results:
+
+                     Estimate Std. Error MCMC % z value Pr(>|z|)    
+edges                -2.76686    0.40163      0  -6.889  < 1e-04 ***
+nodematch.department  0.68951    0.21289      0   3.239 0.001200 ** 
+mutual                0.92255    0.37675      0   2.449 0.014337 *  
+gwesp.OTP.fixed.0.3   0.89866    0.24084      0   3.731 0.000191 ***
+istar2               -0.07000    0.08157      0  -0.858 0.390831    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+     Null Deviance: 582.2  on 420  degrees of freedom
+ Residual Deviance: 420.1  on 415  degrees of freedom
+ 
+AIC: 430.1  BIC: 450.3  (Smaller is better. MC Std. Err. = 0.4733)
