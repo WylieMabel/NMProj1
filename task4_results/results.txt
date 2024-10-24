@@ -1,0 +1,31 @@
+First fit with only the following hypotheses:
+i. A friendship nomination is more likely between a pair of managers within the same
+deparment.
+ii. Senior managers are less likely to nominate friends.
+iii. A friendship nomination is more likely between a pair of managers of a similar age
+
+Maximum Likelihood Results:
+
+                     Estimate Std. Error MCMC % z value Pr(>|z|)    
+edges                 0.18992    0.58082      0   0.327   0.7437    
+nodematch.department  1.06871    0.25836      0   4.136   <1e-04 ***
+absdiff.age          -0.03077    0.01613      0  -1.908   0.0564 .  
+nodeocov.age         -0.03388    0.01575      0  -2.152   0.0314 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+Second fit after introducing structural statistics from task 3.2
+
+Monte Carlo Maximum Likelihood Results:
+
+                     Estimate Std. Error MCMC % z value Pr(>|z|)    
+edges                -1.68791    0.70405      0  -2.397  0.01651 *  
+nodematch.department  0.74706    0.20714      0   3.606  0.00031 ***
+absdiff.age          -0.01399    0.01446      0  -0.967  0.33351    
+nodeocov.age         -0.02118    0.01467      0  -1.444  0.14874    
+mutual                0.91094    0.36030      0   2.528  0.01146 *  
+gwesp.OTP.fixed.0.3   0.79273    0.24491      0   3.237  0.00121 ** 
+istar2               -0.06159    0.08569      0  -0.719  0.47233    
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
