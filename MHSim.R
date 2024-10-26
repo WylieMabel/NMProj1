@@ -134,3 +134,4 @@ MarkovChain <- function(
   # Return the simulated networks and the statistics
   return(list(netSim = netSim, statSim = statSim))
 }
+
