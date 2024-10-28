@@ -252,10 +252,9 @@ The given parameters deviate too much from the observed values:
 
 observed mean std_dev p_value \# 1 190 32.22 6.606669 0 \# 2 90 6.32 3.637293 0 \# 3 930 25.86 11.646320 0 \#' the main issue seems to lie in the first parameter, as way less edges \#' appear than the observed quantity, as such for task 2.3 it makes sense \#' to increase that parameter, this will also inevitably increase the amount \#' of 2-istars so we keep the third parameter constant or only adjust it \#' slightly as we see fit.
 
-#### 3)					
+#### 3)
 
-*Guess better estimates of 𝜃1, 𝜃2 and 𝜃3 based on the analysis in (2). Describe the proce-
-dure you used to obtain the guessed values.*
+*Guess better estimates of 𝜃1, 𝜃2 and 𝜃3 based on the analysis in (2). Describe the proce- dure you used to obtain the guessed values.*
 
 ```{r}
 task2_3 = function(advice, theta1, theta2, theta3)
@@ -274,14 +273,12 @@ task2_3 = function(advice, theta1, theta2, theta3)
 task2_3(adviceTies, 0, 0,0)
 ```
 
-			
-
 ### Task 3: Estimation and interpretation of an ERGM
 
 ```{r}
 plotNetwork = function(net, nodes)
 {
-  net = network(friendship,directed=TRUE);
+  net = network(friendshipTies,directed=TRUE);
   net %v% "level" = nodes$nodeLevel;
   net %v% "department" = nodes$nodeDepartment;
   
@@ -314,116 +311,104 @@ plotNetwork = function(net, nodes)
 }
 ```
 
-#### 1) 
+#### 1)
 
-Estimate an ERGM with the edges and a deparment homophily parameters. Compute
-the conditional probability of observing a tie between two managers 𝑖 and 𝑗 belonging to
-the same department and interpret the result.		
+Estimate an ERGM with the edges and a deparment homophily parameters. Compute the conditional probability of observing a tie between two managers 𝑖 and 𝑗 belonging to the same department and interpret the result.
 
 ```{r}
-task3_1 = function(friendship, nodes)
-{
-  net = network(friendship,directed=TRUE);
-  net %v% "level" = nodes$nodeLevel;
-  net %v% "department" = nodes$nodeDepartment;
+net = network(friendshipTiesMatrix,directed=TRUE);
+net %v% "level" = nodes$nodeLevel;
+net %v% "department" = nodes$nodeDepartment;
   
-  outdegree = rowSums(friendship);
-  indegree = colSums(friendship);
-  par(mfrow=c(2,1),mar=c(4,3,1,3));
-  hist(outdegree, xlab="Outdegree",col="grey", main="", breaks = 21);
-  hist(indegree, xlab="Indegree",col="grey", main="", breaks = 21);
+outdegree = rowSums(friendshipTiesMatrix);
+indegree = colSums(friendshipTiesMatrix);
+par(mfrow=c(2,1),mar=c(4,3,1,3));
+hist(outdegree, xlab="Outdegree",col="grey", main="", breaks = 21);
+hist(indegree, xlab="Indegree",col="grey", main="", breaks = 21);
   
-  model = ergm(net ~ edges + nodematch('department'));
-  print(summary(model))
+model = ergm(net ~ edges + nodematch('department'));
+print(summary(model))
   
-  theta_1 = coef(model)[1]
-  theta_2 = coef(model)[2]
+theta_1 = coef(model)[1]
+theta_2 = coef(model)[2]
   
-  # Odds of tie existing given it is not homophile
-  odds1 = exp(theta_1)
-  # Probability
-  prob1 = exp(odds1) / (1+exp(odds1))
-  print(paste("Tie existing given it is not going homophile.","Odds:",odds1,"Probability:",prob1))
+# Odds of tie existing given it is not homophile
+odds1 = exp(theta_1)
+# Probability
+prob1 = exp(odds1) / (1+exp(odds1))
+print(paste("Tie existing given it is not going homophile.","Odds:",odds1,"Probability:",prob1))
   
-  # Odds of a tie being homophile given it exists
-  odds2 = exp(theta_2)
-  # Probability
-  prob2 = exp(odds2) / (1+exp(odds2))
-  print(paste("Tie being homophile given it already exists.","Odds:",odds2,"Probability:",prob2))
+# Odds of a tie being homophile given it exists
+odds2 = exp(theta_2)
+# Probability
+prob2 = exp(odds2) / (1+exp(odds2))
+print(paste("Tie being homophile given it already exists.","Odds:",odds2,"Probability:",prob2))
   
-  # Odds of a tie existing given it is homophile
-  odds12 = exp(theta_1 + theta_2)
-  # Probability
-  prob12 = exp(odds12) / (1+exp(odds12))
+# Odds of a tie existing given it is homophile
+odds12 = exp(theta_1 + theta_2)
+# Probability
+prob12 = exp(odds12) / (1+exp(odds12))
   print(paste("Tie existing given it is homophile","Odds:",odds12,"Probability:",prob12))
   
 }
 ```
 
-				
-
-#### 2) 
+#### 2)
 
 *Add effects to the ERGM specified in (1) to test simultaneously the following hypotheses:*
 
-*A tie is more likely between managers when it reciprocates a friendship nomination
-(reciprocity).*
+*A tie is more likely between managers when it reciprocates a friendship nomination (reciprocity).*
 
-*A tie is more likely between managers when it closes a transitive two-path (transi-
-tivity).*
+*A tie is more likely between managers when it closes a transitive two-path (transi- tivity).*
 
-*A tie is more likely when the receiver has a higher in-degree (popularity).*		
+*A tie is more likely when the receiver has a higher in-degree (popularity).*
 
 ```{r}
+install.packages('ggraph')
+net = network(friendship,directed=TRUE)
+net %v% "level" = nodes$nodeLevel
+net %v% "department" = nodes$nodeDepartment
+model = ergm(net ~ edges + nodematch('department') + mutual + gwesp(decay=0.3,fixed=TRUE) + istar(2))
 
-task3_234 = function(friendship, nodes)
-{
-  net = network(friendship,directed=TRUE)
+```
+
+#Task 3.2 Motivation for statistics choice: as asked in task 3.1 we are carrying over the edges and nodematch('department') statistics, which measure edge count and department homophile edges respectively. The new additions are mutual, ttriple/gwesp, and istar(2). Mutual counts the number of mutual ties, this tests for hypothesis I. Ttriple (transitive triple) and gwesp (geometrically weighted edgewise shared partner distribution) are both used to count the number of transitive triangles, ttriple will not be discarded due to poor convergence (see task 3.3). This statistics are used to test hypothesis II. For hypothesis III we are using the istar(2) statistic, which counts the amount istar of degree 2. As pointed out in the assignment description for task 2 and by [ERGMs (Koskinen & Daraganova, 2013) Datei] a skewed indegree distribution that favours high degree nodes will lead to a higher count of istar(2).
+
+\# Does not converge (near degeneracy) \# model1 = ergm(net \~ edges + nodematch('department') + mutual + ttriple + istar(2)) \# Does converg
+
+#### 3)
+
+*Estimate the ERGM specified in (2) and comment on the convergence of the algorithm.*
+
+```{r}
+net = network(friendship,directed=TRUE)
   net %v% "level" = nodes$nodeLevel
   net %v% "department" = nodes$nodeDepartment
   
-  # Task 3.2
-  #' Motivation for statistics choice: as asked in task 3.1 we are carrying over the edges and
-  #' nodematch('department') statistics, which measure edge count and department homophile
-  #' edges respectively. The new additions are mutual, ttriple/gwesp, and istar(2). Mutual counts
-  #' the number of mutual ties, this tests for hypothesis I. Ttriple (transitive triple) and 
-  #' gwesp (geometrically weighted edgewise shared partner distribution) are both used to count
-  #' the number of transitive triangles, ttriple will not be discarded due to poor convergence
-  #' (see task 3.3). This statistics are used to test hypothesis II. For hypothesis III we are
-  #' using the istar(2) statistic, which counts the amount istar of degree 2. As pointed out
-  #' in the assignment description for task 2 and by [ERGMs (Koskinen & Daraganova, 2013) Datei]
-  #' a skewed indegree distribution that favours high degree nodes will lead to a higher count of
-  #' istar(2).
-  #'
-  # Does not converge (near degeneracy)
-  # model1 = ergm(net ~ edges + nodematch('department') + mutual + ttriple + istar(2))
-  # Does converge
-  model = ergm(net ~ edges + nodematch('department') + mutual + gwesp(decay=0.3,fixed=TRUE) + istar(2))
+model = ergm(net ~ edges + nodematch('department') + mutual + gwesp(decay=0.3,fixed=TRUE) + istar(2))
   print(summary(model))
-  
-  #' Comments of convergence (3.3): as seen in the diagnostic image the trace of the statistics
-  #' fluctuate around zero and the density approximates a normal distribution for all
-  #' used statistics. This implies that the model converged but not necessarly that it
-  #' is a good fit, for that GOF is going to be necessary (task 3.4). This results are
-  #' only obtained when using the gwesp statistic, its counterpart ttriple does not mix
-  #' well and prevents the model from converging. This as seen in class is most likely
-  #' due to the phenomenon of near degeneracy. Gwesp counteracts this effect.
-  mcmc.diagnostics(model)
-  
-  #' Comments on GOF (3.4): as seen in the GOF plots all the custom defined statistics as well
-  #' as the four auxiliary statistics provided by the statnet library gof function 
-  #' (odegree, idegree, edge-wise shared partners and minimum geodesic distance) fall within
-  #' the lower and upper quantiles therefore showing a good fit. However the mean of the odegree
-  #' does deviate in some cases from the observed one. While it does not leave the acceptable
-  #' region it does point towards a discrepancy from the observed network. A possible origin for
-  #' this discrepancy is the skewed distribution of the odegree in the observed network (see image)
-  #' lower degree nodes seem to appear far more often than all others. This is even more evident
-  #' when comparing it with the indegree distribution, it will be discussed in more detail in task 3.5.
-  modelgof = gof(model)
+```
+
+Comments of convergence (3.3): as seen in the diagnostic image the trace of the statistics fluctuate around zero and the density approximates a normal distribution for all used statistics. This implies that the model converged but not necessarly that it is a good fit, for that GOF is going to be necessary (task 3.4). This results are only obtained when using the gwesp statistic, its counterpart ttriple does not mix well and prevents the model from converging. This as seen in class is most likely due to the phenomenon of znear degeneracy. Gwesp counteracts this effect.
+
+#### 4)
+
+*Evaluate the goodness of fit of the model according to four different auxiliary statistics. Comment on the results.*
+
+```{r}
+mcmc.diagnostics(model)
+modelgof = gof(model)
   par(mfrow=c(2,3))
   plot(modelgof)
-}
+```
 
+Comments on GOF (3.4): as seen in the GOF plots all the custom defined statistics as well as the four auxiliary statistics provided by the statnet library gof function (odegree, idegree, edge-wise shared partners and minimum geodesic distance) fall within the lower and upper quantiles therefore showing a good fit. However the mean of the odegree does deviate in some cases from the observed one. While it does not leave the acceptable region it does point towards a discrepancy from the observed network. A possible origin for this discrepancy is the skewed distribution of the odegree in the observed network (see image) lower degree nodes seem to appear far more often than all others. This is even more evident when comparing it with the indegree distribution, it will be discussed in more detail in task 3.5.
+
+#### 5)
+
+*Interpret the estimated parameters.*
+
+```{r}
 task3_5 = function(friendship, nodes)
 {
   nvertices = dim(nodes)[1]
@@ -448,22 +433,74 @@ task3_5 = function(friendship, nodes)
   par(mfrow=c(2,3))
   plot(modelgof)
 }
-
 ```
 
-		
-
-#### 3)
-
-*Estimate the ERGM specified in (2) and comment on the convergence of the algorithm.*				
-
-#### 4)
-
-*Evaluate the goodness of fit of the model according to four different auxiliary statistics.
-Comment on the results.*				
-
-#### 5)
-
-*Interpret the estimated parameters.*
-
 Based on the results from the model of task 3.2 we can see a significant estimate for department homophily and transitive triangles hinting that both have an impact on tie formation, both of which improve the odds of a tie forming. Mutual ties while still show some significance but it is lower than almost all other statistics, possibly showing that reciprocity, while present, is comparatively less impactful. This is particularly strange, as reciprocity has been observed to be particularly significant in most friendship networks and our results go against this pattern, possibly hinting at an additional mechanic that is affecting the formation of mutual ties, this will be discussed in a second, first we want to observe the last estimate tied to istars. Our result show no significant effect and a value close to zero, this could imply no particular skew in the indegree distribution, which does indeed match our observations (see friendship_degree_distribution image). The odds of a tie forming if not helped by any of effects mentioned before (homophily, reciprocity, transitivity) seem to be low as shown by the negative estimate of the edge statistic. Upon visual observation of the network (see friendship network plot) one can observe that ties that go from a subordinate to their superior (manager to vice president and vice president to CEO) are almost never reciprocated. One potential real-life explanation for this could be that while some subordinates might like their superior and consider them a friend, the superior might not want to/ have the chance to familiarize with a subordinate because they want to remain professional or might be/feel detached from the subordinates. To explore this option a new edge covariate is introduced: "superiority" which describes the difference in level between two nodes: a tie from a vice president to a manager has a superiority of one, or -1 in the opposite direction. Same applies in a tie from the CEO to a vice president and vice-versa. A tie from the CEO to a manager has a superiority of 2, or -2 in the opposite direction. We added this covariate to the model and performed the fit once again. The diagnostics show good mixing in all statistics, and goodness of fit also is within the acceptable range of all previous statistics as well as the newly introduced one. In the results we can see that superiority shows significance and that reciprocity has become more significant while the other values stayed nearly unchanged. Additionally the superiority parameter is negative, as expected, meaning that a positive level difference (superior to subordinate) reduces the odds of a tie existing. The mutual parameter has also increased which also makes sense as we are now controlling the level difference with the superiority statistic so we can now isolate the two phenomena. All of this does support our original theory that superiority affects reciprocity in this network.
+
+### Task 4:
+
+```{r}
+task4_1 = function(friendship, nodes)
+{
+  par(mfrow=c(1,1),mar=c(4,3,1,3));
+  hist(nodes$nodeAge, xlab="Age",col="grey", main="", breaks = max(nodes$nodeAge));
+  
+  net = network(friendship,directed=TRUE)
+  net %v% "level" = nodes$nodeLevel;
+  net %v% "department" = nodes$nodeDepartment
+  net %v% "age" = nodes$nodeAge
+  
+  #' ERGM parameter explanation
+  #' nodematch tests for homophily
+  #' absdiff tests for the absolute age difference
+  #' nodeocov for the effect of age on the outdegree, not to be confused with nodeofactor
+  #' which does a 'categorical' test, that means: it tests for example being specifically
+  #' 27,28,29.. has an effect on tie formation, it creates one paramater for each age group
+  #' nodeocov is 'continuous' and tests for the effect on tie formation when increasing
+  #' the age no matter where you started from.
+ 
+  model0 = ergm(net ~ edges + nodematch('department') + absdiff('age') + nodeocov('age'))
+  print(summary(model0))
+  
+  #' From Task 1.3 MR-QAP
+  #'                 Estimate    Exp(b)    Pr(<=b) Pr(>=b) Pr(>=|b|)
+  #' intercept       -1.97460863 0.1388156 0.0056  0.9944  0.0056  *
+  #' adviceMatrix     0.78779191 2.1985365 0.9822  0.0178  0.0292  * 
+  #' sameDep          1.18388201 3.2670323 0.9996  0.0004  0.0004  **
+  #' senioritySender  0.04876536 1.0499740 0.8688  0.1312  0.2336   
+  #' ageDiff         -0.04722080 0.9538768 0.0340  0.9660  0.0954   
+  #' 
+  #' By comparing the results of the ERGM fit (see results.txt) we can see that hypothesis
+  #' conincides with both methods, with homophily having a positive impact on tie formation
+  #' likelyhood and being significant, even more so in the ERGM. Hypothesis 3 is also unchanged
+  #' with the estimate being negative values close to zero and showing little significance
+  #' therefore the null hypothesis is not rejected even with the ERGM. The differences arise
+  #' with hypothesis 2: the ERGM estimates a small negative impact on tie formation with increasing
+  #' age, while not extremely significant it still results in a p-value below 0.05 and therefore
+  #' cannot be completely ignored. This is inconsistent with the previous results obtained with
+  #' MR-QAP which showed an insignificant positive estimate. Another discrepancy appears in the
+  #' baseline odds of forming a tie, in the ERGM this corresponds to the edges parameter, while
+  #' in MR-QAP this corresponds to the intercept. We can see a large difference in the estimate
+  #' that implies that ties are much less likely to occur unaided (no help from homophily or other
+  #' phenomena) in the MR-QAP estimate compared to the ERGM.
+   
+  model1 = ergm(net ~ edges + nodematch('department') + absdiff('age') + nodeocov('age') +
+            mutual + gwesp(decay=0.3,fixed=TRUE) + istar(2))
+  print(summary(model1))
+  
+  #'After this second we that the results match the ones of the MR-QAP much more closely:
+  #'all the results concerning the hypotheses in task 1.3 correspond with the estimates
+  #'of ERGM, the age difference and age contribution to the outdegree both show small
+  #'estimates close to zero with no significance therefore we cannot reject the null hypotheses.
+  #'Department homophily remained a positive and very significant contribution much like in the
+  #'MR-QAP. Additionally the baseline odds of forming a tie (edges for ERGM and intercept for MR-QAP)
+  #'are now much more closer to each other. One possible explanation for the original discrepancy
+  #'is that the ERGM does not take into account any effect that has not been specified in the model,
+  #'as such, a simplistic ERGM will not succeed in modeling the original network. MR-QAP on the other
+  #'hand work by switching the labels of nodes without changing the structure of the network, as such
+  #'structures like reciprocal ties and transitive triangles will persist and affect the final result.
+  #'This was however resolved as soon as we introduced the missing structures in the second ERGM.
+}
+
+task4_1(friendshipTiesMatrix, nodes)
+```
